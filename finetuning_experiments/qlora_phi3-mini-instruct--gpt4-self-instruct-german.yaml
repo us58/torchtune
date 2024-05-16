@@ -1,0 +1,89 @@
+# Usage:
+
+# If model not already downloaded:
+# tune download microsoft/Phi-3-mini-4k-instruct --output-dir ../input/models/Phi-3-mini-4k-instruct --ignore-patterns "" --hf-token <HF_TOKEN>
+
+# Start finetuning:
+# tune run lora_finetune_single_device --config qlora_phi3-mini-instruct--gpt4-self-instruct-german.yaml
+
+# To kill the wandb process:
+# ps -aux | grep wandb | awk '{ print $2 }' | xargs kill
+
+# You need to adjust all the absolute paths to the current working copy of the torchtune repository! 
+
+# Model Arguments
+model:
+  _component_: torchtune.models.phi3.qlora_phi3_mini
+  lora_attn_modules: ['q_proj', 'v_proj', 'k_proj', 'output_proj']
+  apply_lora_to_mlp: True
+  apply_lora_to_output: False
+  lora_rank: 8
+  lora_alpha: 16
+
+tokenizer:
+  _component_: torchtune.models.phi3.phi3_mini_tokenizer
+  path: /home/urs/hiwi/torchtune/input/models/Phi-3-mini-4k-instruct/tokenizer.model  # adjust this!
+
+checkpointer:
+  _component_: torchtune.utils.FullModelHFCheckpointer
+  checkpoint_dir: /home/urs/hiwi/torchtune/input/models/Phi-3-mini-4k-instruct  # adjust this!
+  checkpoint_files: [
+    model-00001-of-00002.safetensors,
+    model-00002-of-00002.safetensors
+  ]
+  recipe_checkpoint: null
+  output_dir: /home/urs/hiwi/torchtune/output/qlora_phi3-mini-instruct--gpt4-self-instruct-german/  # adjust this!
+  model_type: PHI3_MINI
+resume_from_checkpoint: False
+
+# Dataset and Sampler
+dataset:
+  _component_: torchtune.datasets.gpt4_self_instruct_german_dataset
+  train_on_input: True
+seed: null
+shuffle: True
+batch_size: 4
+
+# Optimizer and Scheduler
+optimizer:
+  _component_: torch.optim.AdamW
+  weight_decay: 0.01
+  lr: 3e-4
+lr_scheduler:
+  _component_: torchtune.modules.get_cosine_schedule_with_warmup
+  num_warmup_steps: 100
+
+loss:
+  _component_: torch.nn.CrossEntropyLoss
+
+# Training
+epochs: 1
+max_steps_per_epoch: null
+gradient_accumulation_steps: 8
+compile: False
+
+# enable logging to the built-in WandBLogger
+metric_logger:
+  _component_: torchtune.utils.metric_logging.WandBLogger
+  # the W&B project to log to
+  project: qlora_phi3-mini-instruct--gpt4-self-instruct-german
+
+# Logging
+output_dir: /tmp/qlora_finetune_output/
+# metric_logger:
+#   _component_: torchtune.utils.metric_logging.DiskLogger
+#   log_dir: ${output_dir}
+# log_every_n_steps: 1
+# log_peak_memory_stats: False
+
+# Environment
+device: cuda
+dtype: bf16
+enable_activation_checkpointing: True
+
+# Show case the usage of pytorch profiler
+# Set enabled to False as it's only needed for debugging training
+profiler:
+  _component_: torchtune.utils.profiler
+  enabled: True
+  output_dir: ${output_dir}/torchtune_perf_tracing.json

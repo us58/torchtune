@@ -13,6 +13,7 @@ from torchtune.datasets._packed import PackedDataset
 from torchtune.datasets._samsum import samsum_dataset
 from torchtune.datasets._slimorca import slimorca_dataset
 from torchtune.datasets._stack_exchanged_paired import stack_exchanged_paired_dataset
+from torchtune.datasets._gpt4_self_instruct_german import gpt4_self_instruct_german_dataset
 
 __all__ = [
     "alpaca_dataset",
@@ -27,4 +28,5 @@ __all__ = [
     "chat_dataset",
     "PackedDataset",
     "ConcatDataset",
+    "gpt4_self_instruct_german_dataset"
 ]
