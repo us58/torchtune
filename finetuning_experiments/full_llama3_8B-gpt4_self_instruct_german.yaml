@@ -1,7 +1,7 @@
 # Usage:
 #
 # If model not already downloaded:
-# tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir ../input/models/Meta-Llama-3-8B-Instruct --hf-token <HF_TOKEN>
+# tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir ../input/models/Meta-Llama-3-8B-Instruct --ignore-patterns "original/consolidated*" --hf-token <HF_TOKEN>
 #
 # The default config uses an optimizer from bitsandbytes. If you do not have it installed,
 # you can install it with
