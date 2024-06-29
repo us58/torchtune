@@ -1,0 +1,96 @@
+# Usage:
+
+# If model not already downloaded:
+# tune download meta-llama/Meta-Llama-3-8B --output-dir ../input/models/Meta-Llama-3-8B  --ignore-patterns original/consolidated.00.pth
+
+# Start finetuning:
+# tune run lora_finetune_single_device --config lora_llama3_8b--tf_dataset.yaml
+
+# To kill the wandb process:
+# ps -aux | grep wandb | awk '{ print $2 }' | xargs kill
+
+# You need to adjust all the absolute paths to the current working copy of the torchtune repository! 
+
+
+# Model Arguments
+model:
+  _component_: torchtune.models.llama3.lora_llama3_8b
+  lora_attn_modules: ['q_proj', 'v_proj', 'k_proj', 'output_proj']
+  apply_lora_to_mlp: True
+  apply_lora_to_output: False
+  lora_rank: 256
+  lora_alpha: 256
+
+tokenizer:
+  _component_: torchtune.models.llama3.llama3_tokenizer
+  path: /home/fr/fr_fr/fr_us58/workspace-30-06/torchtune/input/models/Meta-Llama-3-8B/original/tokenizer.model  # adjust this!
+
+checkpointer:
+  _component_: torchtune.utils.FullModelHFCheckpointer
+  checkpoint_dir: /home/fr/fr_fr/fr_us58/workspace-30-06/torchtune/input/models/Meta-Llama-3-8B  # adjust this!
+  checkpoint_files: [
+    model-00001-of-00004.safetensors,
+    model-00002-of-00004.safetensors,
+    model-00003-of-00004.safetensors,
+    model-00004-of-00004.safetensors
+  ]
+  adapter_checkpoint: null
+  recipe_checkpoint: null
+  output_dir: /home/fr/fr_fr/fr_us58/workspace-30-06/torchtune/output/lora_llama3-8b--tf_dataset/  # adjust this!
+  model_type: LLAMA3
+  safe_serialization: True
+resume_from_checkpoint: False
+
+# Dataset and Sampler
+dataset:
+  _component_: torchtune.datasets.text_completion_dataset
+  source: json
+  data_files: /home/fr/fr_fr/fr_us58/workspace-30-06/datasets/tf_dataset.json
+  split: train
+  column: text
+  max_seq_len: 1100
+shuffle: True
+seed: null
+
+# Fine-tuning arguments
+batch_size: 1
+epochs: 1
+optimizer:
+  _component_: torch.optim.AdamW
+  weight_decay: 0.01
+  lr: 3e-5
+lr_scheduler:
+  _component_: torchtune.modules.get_cosine_schedule_with_warmup
+  num_warmup_steps: 100
+loss:
+  _component_: torch.nn.CrossEntropyLoss
+max_steps_per_epoch: null
+gradient_accumulation_steps: 1
+optimizer_in_bwd: True
+compile: False
+
+# WandBLogger
+metric_logger:
+  _component_: torchtune.utils.metric_logging.WandBLogger
+  # the W&B project to log to
+  project: lora_llama3-8b--tf_dataset
+
+# Logging
+output_dir: /tmp/lora_llama3_8b--tf_dataset_output
+# metric_logger:
+#   _component_: torchtune.utils.metric_logging.DiskLogger
+#   log_dir: ${output_dir}
+# log_every_n_steps: 1
+# log_peak_memory_stats: False
+
+# Environment
+device: cuda
+dtype: bf16
+enable_activation_checkpointing: True
+
+# Show case the usage of pytorch profiler
+# Set enabled to False as it's only needed for debugging training
+# profiler:
+#   _component_: torchtune.utils.profiler
+#   enabled: False
+#   output_dir: ${output_dir}/torchtune_perf_tracing.json
