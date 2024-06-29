@@ -30,8 +30,8 @@ def padded_collate(
 
     Example:
         >>> token_pairs = [
-        >>>    ([1, 2, 3], [4, 5, 6]),
-        >>>    ([7,], [10,],),
+        >>>    {"tokens": [1, 2, 3], "labels": [4, 5, 6]},
+        >>>    {"tokens": [7,], "labels": [10,]},
         >>> ]
         >>> inputs, labels = padded_collate(
         >>>    batch=token_pairs,
@@ -92,6 +92,10 @@ def padded_collate_dpo(
     Returns:
         Tuple[torch.Tensor, torch.Tensor]: A tuple containing concatenated and padded
         input ids and labels.
+
+    Raises:
+        AssertionError: if the length of chosen_input_ids and rejected_input_ids differ.
+        AssertionError: if the length of chosen_labels and rejected_labels differ.
 
     Example:
         >>> batch = [
