@@ -26,22 +26,22 @@ def padded_collate(
         ignore_idx (int): Padding index for labels. Defaults to -100.
 
     Returns:
-        Collated input and label tensors.
+        Dict[str, torch.Tensor]: Collated input and label tensors.
 
     Example:
         >>> token_pairs = [
         >>>    {"tokens": [1, 2, 3], "labels": [4, 5, 6]},
         >>>    {"tokens": [7,], "labels": [10,]},
         >>> ]
-        >>> inputs, labels = padded_collate(
+        >>> collated = padded_collate(
         >>>    batch=token_pairs,
         >>>    padding_idx=padding_idx,
         >>>    ignore_idx=ignore_idx,
         >>> )
-        >>> inputs
+        >>> collated["tokens"]
         >>> tensor([[1, 2, 3], [7, 0, 0]])
-        >>> labels
-        >>> tensor([[4,5,6], [10,-100,-100]])
+        >>> collated["labels"]
+        >>> tensor([[4, 5, 6], [10, -100, -100]])
     """
     input_ids = pad_sequence(
         [torch.tensor(x["tokens"]) for x in batch],
@@ -82,6 +82,10 @@ def padded_collate_dpo(
     as a dictionary with multiple key-value pairs. Each key corresponds to a different
     sequence component, such as input_ids or labels.
 
+    This function will throw an AssertionError if:
+        - the length of chosen_input_ids and rejected_input_ids differ.
+        - the length of chosen_labels and rejected_labels differ.
+
     Args:
         batch (List[Dict[str, List[int]]]): A list of dictionaries, where each dictionary
             represents a sequence with multiple components, 'chosen_input_ids',
@@ -92,10 +96,6 @@ def padded_collate_dpo(
     Returns:
         Tuple[torch.Tensor, torch.Tensor]: A tuple containing concatenated and padded
         input ids and labels.
-
-    Raises:
-        AssertionError: if the length of chosen_input_ids and rejected_input_ids differ.
-        AssertionError: if the length of chosen_labels and rejected_labels differ.
 
     Example:
         >>> batch = [

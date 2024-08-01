@@ -60,7 +60,7 @@ all of our built-in datasets and dataset builders are using Hugging Face's ``loa
 to load in your data, whether local or on the hub.
 
 You can pass in a Hugging Face dataset path to the ``source`` parameter in any of our builders
-to specify which dataset on the hub to download. Additionally, all builders accept
+to specify which dataset on the hub to download or use from a local directory path (see `Local and remote datasets`_). Additionally, all builders accept
 any keyword-arguments that ``load_dataset()`` supports. You can see a full list
 on Hugging Face's `documentation. <https://huggingface.co/docs/datasets/en/loading>`_
 
@@ -171,7 +171,7 @@ Custom unstructured text corpus
 
 For continued pre-training, typically a similar data setup to pre-training is used
 for a simple text completion task. This means no instruct templates, chat formats,
-and minimal special tokens (only BOS and EOS). To specify an unstructured text corpus,
+and minimal special tokens (only BOS and, optionally,  EOS). To specify an unstructured text corpus,
 you can use the :func:`~torchtune.datasets.text_completion_dataset` builder with
 a Hugging Face dataset or a custom local corpus. Here is how to specify it for local
 files:
@@ -295,6 +295,17 @@ and create your own class.
     dataset.template=import.path.to.CustomTemplate
 
 
+torchtune uses :code:`importlib.import_module` (see ``importlib`` `docs <https://docs.python.org/3/library/importlib.html>`_ for more details)
+to locate components from their dotpaths. You can place your custom template class
+in any Python file as long as the file is accessible by Python's import mechanism.
+This means the module should be in a directory that is included in Python's search
+paths (:code:`sys.path`). This often includes:
+
+- The current directory from which your Python interpreter or script is run.
+- Directories where Python packages are installed (like :code:`site-packages`).
+- Any directories added to :code:`sys.path` at runtime using :code:`sys.path.append` or through the :code:`PYTHONPATH` environment variable.
+
+
 Custom chat dataset and chat formats
 ------------------------------------
 
@@ -395,8 +406,9 @@ you can also add more advanced behavior.
 Multiple in-memory datasets
 ---------------------------
 
-It is also possible to train on multiple datasets and configure them individually.
-You can even mix instruct and chat datasets or other custom datasets.
+It is also possible to train on multiple datasets and configure them individually using
+our :class:`~torchtune.datasets.ConcatDataset` interface. You can even mix instruct and chat datasets
+or other custom datasets.
 
 .. code-block:: yaml
 
@@ -522,7 +534,7 @@ to add a custom instruct template as well.
 .. code-block:: python
 
     def stack_exchanged_paired_dataset(
-        tokenizer: Tokenizer,
+        tokenizer: ModelTokenizer,
         max_seq_len: int = 1024,
     ) -> PreferenceDataset:
         return PreferenceDataset(

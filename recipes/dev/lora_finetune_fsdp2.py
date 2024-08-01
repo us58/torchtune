@@ -105,6 +105,10 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
     """
 
     def __init__(self, cfg: DictConfig) -> None:
+
+        if not utils.torch_version_ge("2.4.0"):
+            raise RuntimeError("FSDP2 recipe is only available on PyTorch nightlies")
+
         self._device = utils.get_device(device=cfg.device)
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
 
@@ -603,7 +607,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                     loss_to_log = running_loss.item()
                     pbar.update(1)
                     pbar.set_description(
-                        f"{curr_epoch+1}|{self.global_step}|Loss: {loss_to_log}"
+                        f"{curr_epoch + 1}|{self.global_step}|Loss: {loss_to_log}"
                     )
 
                     # Log per-step metrics
